@@ -1,0 +1,32 @@
+name: Notify kdmapper Updates
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"  # ตรวจทุก 30 นาที
+  workflow_dispatch:
+
+jobs:
+  check-updates:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get latest commit info
+        run: |
+          OWNER="TheCruZ"
+          REPO="kdmapper"
+          DISCORD_WEBHOOK="${{ secrets.DISCORD_WEBHOOK }}"
+
+          LATEST=$(curl -s "https://api.github.com/repos/$OWNER/$REPO/commits" | jq -r '.[0]')
+          MESSAGE=$(echo "$LATEST" | jq -r '.commit.message')
+          AUTHOR=$(echo "$LATEST" | jq -r '.commit.author.name')
+          URL=$(echo "$LATEST" | jq -r '.html_url')
+          DATE=$(echo "$LATEST" | jq -r '.commit.author.date')
+
+          PAYLOAD=$(jq -n \
+            --arg msg "**📦 kdmapper updated!**" \
+            --arg m "📝 **Commit:** $MESSAGE" \
+            --arg a "👤 **Author:** $AUTHOR" \
+            --arg d "🕒 **Date:** $DATE" \
+            --arg u "🔗 [View Commit]($URL)" \
+            '{content: ($msg + "\n" + $m + "\n" + $a + "\n" + $d + "\n" + $u)}')
+
+          curl -H "Content-Type: application/json" -X POST -d "$PAYLOAD" "$DISCORD_WEBHOOK"
