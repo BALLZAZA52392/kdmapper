@@ -1,0 +1,28 @@
+name: Sync with upstream kdmapper
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"   # ทุก 6 ชั่วโมง
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout fork
+        uses: actions/checkout@v3
+        with:
+          persist-credentials: false
+
+      - name: Add upstream and fetch
+        run: |
+          git remote add upstream https://github.com/TheCruZ/kdmapper.git
+          git fetch upstream
+          git checkout master
+          git merge upstream/master || true
+
+      - name: Push changes back to your fork
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git master
